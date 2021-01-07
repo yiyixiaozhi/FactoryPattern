@@ -1,26 +1,29 @@
 package top.bianxh.factory;
 
-import top.bianxh.factory.pizzas.ChicagoPizzaStore;
-import top.bianxh.factory.pizzas.NYPizzaStore;
-import top.bianxh.factory.pizzas.Pizza;
-import top.bianxh.factory.pizzas.PizzaStore;
+import top.bianxh.factory.pizzas.*;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
 public class PizzaTestDrive {
+
 	public static void main(String[] args) {
 		List<PizzaStore> pizzaStores = Arrays.asList(new NYPizzaStore(), new ChicagoPizzaStore());
 		List<String> pizzaTypes = Arrays.asList("cheese", "clam", "pepperoni", "veggie");
 		List<String> consumers = Arrays.asList("Ethan", "Joel");
-		Producer producer = new Producer();
-		for (int index = 0; index < 10; index++) {
-			PizzaStore pizzaStore = pizzaStores.get(new Random().nextInt(pizzaStores.size() - 1));
-			String pizzaType = pizzaTypes.get(new Random().nextInt(pizzaTypes.size() - 1));
-			Pizza pizza = producer.produce(pizzaStore, pizzaType);
-			String consumer = consumers.get(new Random().nextInt(consumers.size() - 1));
-			System.out.println(consumer + " ordered a " + pizza + "\n");
+
+		Consumer consumer = new Consumer();
+		while (true) {
+			// 随机在比萨商店中生产某类型的比萨
+			PizzaStore pizzaStore = pizzaStores.get(new Random().nextInt(pizzaStores.size()));
+			String pizzaType = pizzaTypes.get(new Random().nextInt(pizzaTypes.size()));
+			pizzaStore.submitProduceTask(pizzaType);
+
+			PizzaStore consumeFromPizzaStore = pizzaStores.get(new Random().nextInt(pizzaStores.size()));
+			String consumePizzaType = pizzaTypes.get(new Random().nextInt(pizzaTypes.size()));
+			String consumerName = consumers.get(new Random().nextInt(consumers.size()));
+			consumer.consume(consumeFromPizzaStore, consumePizzaType, consumerName);
 		}
 	}
 
