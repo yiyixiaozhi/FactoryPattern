@@ -16,10 +16,13 @@ public abstract class PizzaStore {
 	// 每个品类pizza库存最小限制
 	private final int MIX_STORE_NUM = 10;
 
+	// 任务的最大处理队列
+	private final int MAX_QUEUE = 1000;
+
 	private Map<String, LinkedList<Pizza>> stockMap = new ConcurrentHashMap<>();
 
 	private ExecutorService executorService = new ThreadPoolExecutor(5, 5, 0, TimeUnit.MILLISECONDS,
-			new LinkedBlockingQueue<>(1000), new ThreadPoolExecutor.DiscardPolicy());
+			new LinkedBlockingQueue<>(MAX_QUEUE), new ThreadPoolExecutor.AbortPolicy());
 
 	protected abstract Pizza createPizza(String item);
 
@@ -61,11 +64,12 @@ public abstract class PizzaStore {
 			return pizza;
 		} else {
 			// 没有库存，直接生产给消费者（等待生产结果，让消费者不落空）
-			System.out.println(this + "库存空，直接等待生产");
-			return produce(type);
+			System.out.println(this + "库存空，通知生产");
+			submitProduceTask(type);
+//			return produce(type); // 此处不要使用同步方法，如果提交生产任务失败，则有阻塞中消费线程执行任务的风险，导致消费任务永远等待
+			return null;
 		}
 	}
-
 
 	/**
 	 * 异步生产
@@ -73,11 +77,22 @@ public abstract class PizzaStore {
 	 * @return
 	 */
 	public void submitProduceTask(String pizzaType) {
-		executorService.submit(new ProducePizzaTask(pizzaType));
+		if (!isStockFull(pizzaType)) {
+			try {
+				executorService.submit(new ProducePizzaTask(pizzaType));
+			} catch (RejectedExecutionException ex) {
+//				System.out.println(this + pizzaType + "生产任务超过了" + MAX_QUEUE);
+//				ex.printStackTrace();
+			}
+//			submit.
+		} else {
+			System.out.println(this + pizzaType + "库存满，停止生产");
+		}
 	}
 
 	/**
 	 * 生产pizza
+	 * 同步方法
 	 */
 	public Pizza produce(String pizzaType) {
 		Future<Pizza> future = executorService.submit(new ProducePizzaTask(pizzaType));
@@ -128,6 +143,9 @@ public abstract class PizzaStore {
 		return false;
 	}
 
+	// 店面对于某种类型比萨的总生产次数
+	private int pizzaProduceNum;
+
 	/**
 	 * 生产pizza
 	 */
@@ -140,6 +158,8 @@ public abstract class PizzaStore {
 
 		@Override
 		public Pizza call() throws Exception {
+			pizzaProduceNum++;
+			System.out.println(PizzaStore.this + pizzaType + "生产次数" + pizzaProduceNum);
 			long start = System.currentTimeMillis();
 			try {
 				// 默认人数随机阻塞1-3秒钟

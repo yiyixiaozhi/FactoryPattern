@@ -1,8 +1,5 @@
 package top.bianxh.factory.pizzas;
 
-import top.bianxh.factory.pizzas.Pizza;
-import top.bianxh.factory.pizzas.PizzaStore;
-
 import java.util.Random;
 import java.util.concurrent.*;
 
@@ -11,19 +8,29 @@ import java.util.concurrent.*;
  * 使用线程池默认用户随机消费行为
  */
 public class Consumer {
+    // 消费者最大消费量
+    private final int MAX_CONSUME_NUM = 100;
     /**
      * 使用线程池赋能消费者不定时消费比萨的情况
      */
     private ExecutorService executorService = new ThreadPoolExecutor(5, 5, 0, TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<>(100), new ThreadPoolExecutor.DiscardPolicy());
+            new LinkedBlockingQueue<>(MAX_CONSUME_NUM), new ThreadPoolExecutor.AbortPolicy());
 
     /**
      * 随机消费
      * 用户在pizzaStore消费某种类型的pizza
      */
     public void consume(PizzaStore pizzaStore, String pizzaType, String consumer) {
-        executorService.submit(new ConsumeTask(pizzaStore, pizzaType, consumer));
+        try {
+            executorService.submit(new ConsumeTask(pizzaStore, pizzaType, consumer));
+        } catch (RejectedExecutionException ex) {
+//            System.out.println(consumer + "消费超过了" + MAX_CONSUME_NUM);
+//            ex.printStackTrace();
+        }
     }
+
+    // 消费者的总消费次数
+    private int currentCosumeNum;
 
     public class ConsumeTask implements Callable<Pizza> {
         private PizzaStore pizzaStore;
@@ -39,6 +46,8 @@ public class Consumer {
 
         @Override
         public Pizza call() {
+            currentCosumeNum++;
+            System.out.println(consumer + "总消费次数" + currentCosumeNum);
             long start = System.currentTimeMillis();
             try {
                 // 默认人数随机阻塞300毫秒
@@ -49,7 +58,8 @@ public class Consumer {
             }
             Pizza pizza = pizzaStore.consumePizza(pizzaType);
             System.out.println(Thread.currentThread().getName() + " - " + consumer
-                    + " ordered a " + pizza + " by " + (System.currentTimeMillis() - start) + "ms");
+                    + " ordered a " + pizzaType + " by " + (System.currentTimeMillis() - start) + "ms\n"
+                    + "get " + pizza);
             return pizza;
         }
     }
