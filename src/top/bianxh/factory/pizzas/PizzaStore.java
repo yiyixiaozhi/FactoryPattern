@@ -18,12 +18,14 @@ public abstract class PizzaStore {
 
 	private Map<String, LinkedList<Pizza>> stockMap = new ConcurrentHashMap<>();
 
-	private ExecutorService executorService = Executors.newFixedThreadPool(5);
+	private ExecutorService executorService = new ThreadPoolExecutor(5, 5, 0, TimeUnit.MILLISECONDS,
+			new LinkedBlockingQueue<>(1000), new ThreadPoolExecutor.DiscardPolicy());
 
 	protected abstract Pizza createPizza(String item);
 
 	/**
 	 * 下单生产pizza
+	 *
 	 * @param type
 	 * @return
 	 */
@@ -155,8 +157,8 @@ public abstract class PizzaStore {
 				}
 				pizzas.addLast(pizza);
 				stockMap.put(pizzaType, pizzas);
+				System.out.println(Thread.currentThread().getName() + "制作完成, 耗时" + (System.currentTimeMillis() - start) + "ms");
 			}
-			System.out.println(Thread.currentThread().getName() + "制作完成, 耗时" + (System.currentTimeMillis() - start) + "ms");
 			return pizza;
 		}
 	}

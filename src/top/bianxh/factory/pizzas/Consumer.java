@@ -14,7 +14,8 @@ public class Consumer {
     /**
      * 使用线程池赋能消费者不定时消费比萨的情况
      */
-    private ExecutorService executorService = Executors.newFixedThreadPool(5);
+    private ExecutorService executorService = new ThreadPoolExecutor(5, 5, 0, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<>(100), new ThreadPoolExecutor.DiscardPolicy());
 
     /**
      * 随机消费
@@ -40,8 +41,8 @@ public class Consumer {
         public Pizza call() {
             long start = System.currentTimeMillis();
             try {
-                // 默认人数随机阻塞3000毫秒
-                final int timeout = new Random().nextInt(3000);
+                // 默认人数随机阻塞300毫秒
+                final int timeout = new Random().nextInt(300);
                 Thread.sleep(timeout);
             } catch (InterruptedException e) {
                 e.printStackTrace();
