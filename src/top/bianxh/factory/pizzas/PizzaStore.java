@@ -84,7 +84,6 @@ public abstract class PizzaStore {
 //				System.out.println(this + pizzaType + "生产任务超过了" + MAX_QUEUE);
 //				ex.printStackTrace();
 			}
-//			submit.
 		} else {
 			System.out.println(this + pizzaType + "库存满，停止生产");
 		}
@@ -92,7 +91,7 @@ public abstract class PizzaStore {
 
 	/**
 	 * 生产pizza
-	 * 同步方法
+	 * 同步方法（有阻塞风险）
 	 */
 	public Pizza produce(String pizzaType) {
 		Future<Pizza> future = executorService.submit(new ProducePizzaTask(pizzaType));
@@ -159,6 +158,10 @@ public abstract class PizzaStore {
 		@Override
 		public Pizza call() throws Exception {
 			pizzaProduceNum++;
+			if (pizzaProduceNum >= Integer.MAX_VALUE) {
+				pizzaProduceNum = 0;
+				System.out.println(PizzaStore.this + pizzaType + "生产次数重置");
+			}
 			System.out.println(PizzaStore.this + pizzaType + "生产次数" + pizzaProduceNum);
 			long start = System.currentTimeMillis();
 			try {

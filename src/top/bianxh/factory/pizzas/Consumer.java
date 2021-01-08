@@ -47,6 +47,10 @@ public class Consumer {
         @Override
         public Pizza call() {
             currentCosumeNum++;
+            if (currentCosumeNum >= Integer.MAX_VALUE) {
+                currentCosumeNum = 0;
+                System.out.println(consumer + "消费次数重置");
+            }
             System.out.println(consumer + "总消费次数" + currentCosumeNum);
             long start = System.currentTimeMillis();
             try {
